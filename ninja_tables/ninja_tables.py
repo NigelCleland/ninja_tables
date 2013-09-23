@@ -7,57 +7,63 @@ import csv
 import os
 import sys
 
-# Get the environment
-
-def render_template(template_name, size):
+def render_template(template_name, headers):
     """ Render a Template which will then be used to render the table
 
     """
 
-    header = " & ".join(["%{{ header.%s }}%" % x for x in range(size)])
-    data = " & ".join(["%{{ item.%s }}%" % x for x in range(size)])
-    tab_columns = "l"*(size + 1)
-    begin_block = "%{ for item in data }%"
-    end_block = "%{ endfor }%"
+    header = " & ".join(["{{< headers.%s >}}" % x for x in headers]) + r'\tabularnewline'
+    data = " & ".join(["{{< item.%s >}}" % x for x in headers]) + r'\tabularnewline'
+    tab_columns = "l"*(len(headers) + 1)
+    begin_block = "{< for item in data: >}"
+    end_block = "{< endfor >}"
 
     renderer = define_renderer()
     template = renderer.get_template(template_name)
     intermediate_file = 'intermediate.tex'
 
     with open(intermediate_file, 'w') as f:
-        f.write(template.render((header, data, tab_columns)))
+        f.write(template.render({'header':header, 'data':data, 'tab_columns':tab_columns, 'begin_block':begin_block, 'end_block':end_block}))
 
     return intermediate_file
 
 def define_renderer():
     renderer = jinja2.Environment(
-        block_start_string='%{',
-        block_end_string='}%'
-        variable_start_string='%{{',
-        variable_end_string='}}%',
-        loader=jinja2.FileSystemLoad(os.path.abspath('.'))
+        block_start_string='{<',
+        block_end_string='>}',
+        variable_start_string='{{<',
+        variable_end_string='>}}',
+        loader=jinja2.FileSystemLoader('.')
         )
 
     return renderer
 
 def render_table(file_name, template_name="template_name.tex"):
 
+    with open(file_name) as f:
+        first_line = f.readline()
+
+    headers = first_line.strip().split(',')
+    data = [line for line in csv.DictReader(open(file_name, 'rb'))]
+
     renderer = define_renderer()
-    intermediate = render_template(template_name, len(headers))
+    intermediate = render_template(template_name, headers)
     template = renderer.get_template(intermediate)
     new_filename = file_name.replace('.csv', '.tex')
 
+    dict_headers = {h:h for h in headers}
+
     with open(new_filename, 'w') as f:
-        f.write(template.render((headers, data)))
+        f.write(template.render(headers=dict_headers, data=data))
 
-
-
+    os.remove(intermediate)
 
 if __name__ == '__main__':
-    # If a tempalte is passed
-    if len(sys.argv) == 2:
-        # If a tempalte is passed use it
-        render_table(sys.argv[1], sys.argv[2])
-    else:
-        # Default Template
-        render_table(sys.argv[1])
+    pass
+    # # If a tempalte is passed
+    # if len(sys.argv) == 2:
+    #     # If a tempalte is passed use it
+    #     render_table(sys.argv[1], sys.argv[2])
+    # else:
+    #     # Default Template
+    #     render_table(sys.argv[1])
