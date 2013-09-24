@@ -4,7 +4,7 @@ Ninja Tables
 
 .. image:: https://badge.fury.io/py/ninja_tables.png
     :target: http://badge.fury.io/py/ninja_tables
-    
+
 .. image:: https://travis-ci.org/NigelCLeland/ninja_tables.png?branch=master
         :target: https://travis-ci.org/NigelCLeland/ninja_tables
 
@@ -20,4 +20,9 @@ Some custom Jinja 2 templates for automatic creation of pretty LaTeX tables from
 Features
 --------
 
-* TODO
+To implement:
+
+* Command Line Usage
+* In module Usage
+* Automation
+* A range of custom templates which I've found useful
