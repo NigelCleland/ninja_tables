@@ -6,6 +6,7 @@ import jinja2
 import csv
 import os
 import sys
+import optparse
 
 def render_template(template_name, headers):
     """ Render a Template which will then be used to render the table
@@ -53,17 +54,70 @@ def render_table(file_name, template_name="template_name.tex"):
 
     dict_headers = {h:h for h in headers}
 
+    dict_headers, data = flush_keys(dict_headers, data)
+
     with open(new_filename, 'w') as f:
         f.write(template.render(headers=dict_headers, data=data))
 
     os.remove(intermediate)
 
+def flush_keys(headers, data):
+    """ This function "fixes" the issue when numbers are passed as headers
+    which Jinja was failing to recognise, e.g type issues.
+    Fixed this by converting them all to floats
+
+    Need to figure out a smarter way as to whether to use floats or ints here
+    It seems...
+
+    """
+    headers2 = {}
+    for key, value in headers.iteritems():
+        try:
+            key = int_check(key)
+            value = int_check(value)
+        except:
+            pass
+        headers2[key] = value
+
+    data2 = []
+    for line in data:
+        new_dict = {}
+        for key, value in line.iteritems():
+            try:
+                key = int_check(key)
+            except:
+                pass
+            new_dict[key] = value
+        data2.append(new_dict)
+
+    return headers2, data2
+
+
+
+def int_check(x):
+    try:
+        int_x = int(x)
+        fl_x = float(x)
+        x = int_x if int_x == fl_x else fl_x
+    except:
+        pass
+    return x
+
+def main():
+    p = optparse.OptionParser(description="Convert a CSV file into a"\
+        "functional, simple LaTeX table",
+        prog="ninja_tables",
+        version="ninja_tables 0.1",
+        usage="%prog filename.csv")
+    p.add_option('--template', '-t', default='standard_booktab.tex',
+                 help="The template to be applied to the table, must be located in the _static directory")
+    options, arguments = p.parse_args()
+
+    if len(arguments) == 1:
+        template = os.path.join('_template', options.template)
+        render_table(arguments[0], template)
+    else:
+        p.print_help()
+
 if __name__ == '__main__':
-    pass
-    # # If a tempalte is passed
-    # if len(sys.argv) == 2:
-    #     # If a tempalte is passed use it
-    #     render_table(sys.argv[1], sys.argv[2])
-    # else:
-    #     # Default Template
-    #     render_table(sys.argv[1])
+    main()
